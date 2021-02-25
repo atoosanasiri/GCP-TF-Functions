@@ -1,1 +1,2 @@
-# GCP-TF-Functions
+# cto-telemetry-app
+CTO Telemetry App
