@@ -1,0 +1,71 @@
+{
+  "variables": {
+    "image_name": "telemetry-app-{{timestamp}}",
+    "image_description": "Apache/PHPserver with Telemetry App",
+    "project_id": "",
+    "account_file": "",
+    "subnetwork": "",
+    "region": "",
+    "build_type_label": "ad-hoc"
+  },
+  "builders": [
+    {
+      "type": "googlecompute",
+      "account_file": "{{ user `account_file`}}",
+      "project_id": "{{user `project_id`}}",
+      "zone": "northamerica-northeast1-a",
+      "subnetwork": "projects/{{user `project_id` }}/regions/{{ user `region`}}/subnetworks/{{ user `subnetwork` }}",
+      "image_family": "apache-php-hard-server-app",
+      "image_name": "{{user `image_name`}}",
+      "image_description": "{{user `image_description`}}",
+      "source_image_family": "apache-php-hard-server",
+      "ssh_username": "otheruser",
+      "disk_size": "100",
+      "machine_type": "n1-standard-4",
+      "image_labels": {
+        "build_type": "{{user `build_type_label`}}"
+      },
+      "metadata": {
+        "enable-oslogin": "false"
+      },
+      "tags": [
+        "vm-install-app"
+      ]
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "../app",
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo cp -a /tmp/app/. /var/www/html",
+        "sudo ls -al /var/www/html"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "./env.sh",
+      "destination": "/tmp/env.sh"
+    },
+    {
+      "type": "file",
+      "source": "./pg_service.conf",
+      "destination": "/tmp/pg_service.conf"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo mv /tmp/env.sh /etc/profile.d",
+        "sudo chmod -x /etc/profile.d/env.sh",
+        "sudo echo {{ user `db_pass`}} >> /tmp/pg_service.conf",
+        "sudo mv /tmp/pg_service.conf /etc/apache2",
+        "sudo chmod 644 /etc/apache2/pg_service.conf",
+        "sudo sh -c 'cat /etc/profile.d/env.sh >> /etc/apache2/envvars'"
+      ]
+    }
+  ]
+}

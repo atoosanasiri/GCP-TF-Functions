@@ -1,0 +1,164 @@
+/* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+       
+#map {
+    height: 90%;
+    width: 100%;
+}
+
+/* Optional: Makes the sample page fill the window. */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+* { margin:0; padding:0 }
+
+.tab { margin-left: 40px; }
+
+.slidecontainer {
+    width: 100%;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 23px;
+  height: 24px;
+  border: 0;
+  background: url('../images/contrasticon.png');
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 23px;
+  height: 24px;
+  border: 0;
+  background: url('../images/contrasticon.png');
+  cursor: pointer;
+}
+       
+
+play_button {
+  background: #D6EAF8;
+  #height: 200px;
+  display: -ms-flex;
+  display: -webkit-flex;
+  display: flex;
+}
+
+play_button button[name="play_animation"] {
+  width: 40px;
+  height: 40px;
+  background: #3498DB ;
+  border: none;
+  border-radius: 100%;
+  margin: auto;
+  cursor: pointer;
+}
+play_button button[name="play_animation"]:focus {
+  outline: 0;
+  border: 1px solid hsl(210, 58%, 69%);
+  box-shadow: 0 0 0 3px hsla(210, 76%, 57%, 0.5);
+}
+
+play_button button[name="play_animation"]::after {
+  content: '';
+  display: inline-block;
+  position: relative;
+  top: 1px;
+  left: 3px;
+  border-style: solid;
+  border-width: 10px 0 10px 20px;
+  border-color: transparent transparent transparent white;
+}
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 100px; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: yellow;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Jul 15, 2020 new button with pause */
+
+.playpause label { display: block; box-sizing: border-box; width: 0; height: 74px; 
+border-color: transparent transparent transparent #202020; transition: 100ms all ease; 
+cursor: pointer; border-style: double; border-width: 0px 0 0px 60px;} 
+.playpause input[type="checkbox"] { visibility: hidden; } 
+.playpause input[type="checkbox"]:checked + label { border-style: solid; border-width: 37px 0 37px 60px; } 
+.playpause{
+    border:8px solid #000;
+    border-radius:50%;
+    height:150px;
+    width:150px;
+    text-align:center;
+    position:relative;
+    background-color:#404040;
+}
+label{
+    position:absolute ;
+    left:45px;
+    top:35px;
+}
+
+#legend {
+    font-family: Arial, sans-serif;
+    background: #fff;
+    padding: 10px;
+    margin: 10px;
+    border: 3px solid #000;
+  }
+  #legend h3 {
+    margin-top: 0;
+  }
+  #legend img {
+    vertical-align: middle;
+  }

@@ -1,0 +1,78 @@
+steps:
+  # retrieve RPA Bot Token/Key
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: rpabot_git_token
+    entrypoint: "bash"
+    dir: ${_DIR}
+    args:
+      - "-c"
+      - |
+        gcloud secrets versions access ${_KEY_VERSION} --secret="rpabot_read_key" --project=${_KEY_PROJECT}  > /root/.ssh/id_rsa;
+        gcloud secrets versions access ${_KEY_VERSION} --secret="user_loader_db_password" --project=$PROJECT_ID  > /workspace/user_loader_db_password.txt;
+
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+
+  # Set up git with key and domain.
+  - name: "gcr.io/cloud-builders/git"
+    id: add-github-key
+    entrypoint: "bash"
+    dir: ${_DIR}
+    args:
+      - "-c"
+      - |
+        chmod 600 /root/.ssh/id_rsa
+        cat <<EOF >/root/.ssh/config
+        Hostname github.com
+        IdentityFile /root/.ssh/id_rsa
+        EOF
+        ssh-keyscan -t rsa github.com > /root/.ssh/known_hosts
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+
+  # # Get  App START ***********************************************
+  # - name: gcr.io/cloud-builders/git
+  #   id: clone-cto-app
+  #   entrypoint: "bash"
+  #   args:
+  #     - "-c"
+  #     - |
+  #       git clone -b master 'git@github.com:telus/cto-telemetry-app.git'
+  #   volumes:
+  #     - name: "ssh"
+  #       path: /root/.ssh
+    
+  - name: gcr.io/cloud-builders/git
+    id: clone-cto-app-list
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        ls -al /workspace 
+  - name: gcr.io/cloud-builders/git
+    id: clone-cto-app-list-function
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        ls -al /workspace/function
+  # Get  App END *************************************************
+
+  - name: gcr.io/cloud-builders/gcloud
+    id: clone-cto-app-deploy-function
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        gcloud functions deploy loadscsvsql_fromgcs --region=northamerica-northeast1 --source=/workspace/function --runtime=python37 --entry-point=loadscsvsql_fromgcs --vpc-connector=vpc-cf-connector --trigger-resource cto-telemetry-pr-staging-bucket --trigger-event google.storage.object.finalize --set-env-vars=DB_USER=loader,DB_PASS=$(cat /workspace/user_loader_db_password.txt),DB_NAME=telemetry-db-pr,DB_HOST=10.53.0.2:5432
+
+substitutions:
+  _KEY_PROJECT: cio-secrets-pr-cb7b98
+  _KEY_VERSION: "latest"
+  _ENV: pr
+  _REGION: northamerica-northeast1
+  _DIR: .
+
+timeout: 3600s

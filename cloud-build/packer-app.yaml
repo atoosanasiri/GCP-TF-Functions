@@ -1,0 +1,114 @@
+steps:
+  # retrieve RPA Bot Token/Key
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: rpabot_git_token
+    entrypoint: "bash"
+    dir: ${_DIR}
+    args:
+      - "-c"
+      - |
+        gcloud secrets versions access ${_KEY_VERSION} --secret="rpabot_git_token" --project=${_KEY_PROJECT}  > /workspace/rpatoken.txt;
+        gcloud secrets versions access ${_KEY_VERSION} --secret="user_app_db_password" --project=$PROJECT_ID  > /workspace/user_app_db_password.txt;
+
+  # Delete Firewall Rule
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: force-delete-cloudbuild-ingress-allow
+    dir: ${_DIR}
+    entrypoint: "bash"
+    args:
+      - "-c" # pass what follows as a command to bash
+      - |
+        gcloud compute firewall-rules delete cloudbuild-ingress-allow --quiet || echo 'Rule Doesn't Exist
+  # Delete cloudbuild Firewall Rule
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: force-delete-cloudbuild-egress-allow
+    dir: ${_DIR}
+    entrypoint: "bash"
+    args:
+      - "-c" # pass what follows as a command to bash
+      - |
+        gcloud compute firewall-rules delete cloudbuild-egress-allow --quiet || echo 'Rule Doesn't Exist
+  # Create Firewall Rule
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: create-cloudbuild-egress-allow
+    dir: ${_DIR}
+    args:
+      - compute
+      - firewall-rules
+      - create
+      - cloudbuild-egress-allow
+      - --network
+      - ${PROJECT_ID}-network-${_ENV}
+      - --action
+      - allow
+      - --rules
+      - all
+      - --target-tags
+      - vm-install
+      - --priority
+      - "100"
+      - --direction
+      - egress
+  # Create Firewall Rule
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: create-cloudbuild-ingress-allow
+    dir: ${_DIR}
+    entrypoint: "bash"
+    args:
+      - "-c" # pass what follows as a command to bash
+      - |
+        CLOUD_BUILD_IP=`curl icanhazip.com`
+        echo "CloudBuildIP: $$CLOUD_BUILD_IP"
+        gcloud compute firewall-rules create cloudbuild-ingress-allow --network ${PROJECT_ID}-network-${_ENV} --action allow --rules all --source-ranges $$CLOUD_BUILD_IP/32
+
+  #Run Packer
+  - name: "gcr.io/${_GCR_PROJECT}/packer"
+    id: packer-build
+    dir: packer
+    entrypoint: "bash"
+    args:
+      - "-c" # pass what follows as a command to bash
+      - |
+        packer build -var db_pass=$(cat /workspace/user_app_db_password.txt) -var project_id=$PROJECT_ID -var app_path=$_APP_PATH -var region=$_REGION -var subnetwork=$_SUBNETWORK packer-app.json
+
+  #Refresh Managed Instance Group w/ new image
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: refresh-managed-instance-group
+    dir: ${_DIR}
+    entrypoint: "bash"
+    args:
+      - "-c" # pass what follows as a command to bash
+      - |
+         gcloud compute instance-groups managed rolling-action replace web --region=$_REGION
+
+  # Delete Firewall Rule
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: delete-cloudbuild-ingress-allow
+    dir: ${_DIR}
+    args:
+      - compute
+      - firewall-rules
+      - delete
+      - cloudbuild-ingress-allow
+  # Delete Firewall Rule
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: delete-cloudbuild-egress-allow
+    dir: ${_DIR}
+    args:
+      - compute
+      - firewall-rules
+      - delete
+      - cloudbuild-egress-allow
+
+substitutions:
+  _KEY_PROJECT: cio-secrets-pr-cb7b98
+  _KEY_VERSION: "latest"
+  _TERRAFORM_VERSION: terraform:0.12.21
+  _GCR_PROJECT: cio-gke-devops-e4993356
+  _ENV: pr
+  _REGION: northamerica-northeast1
+  _SUBNETWORK: telemetry-subnet-pr
+  _APP_PATH: /var/www/html
+
+
+timeout: 3600s
